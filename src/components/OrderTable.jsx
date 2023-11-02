@@ -1,13 +1,12 @@
 import { Table } from "antd";
-import React, { useState } from "react";
-import data from '../assets/DummyData.json';
+import { useState } from "react";
 
-const OrderTable = () => {
+
+const OrderTable = ({data}) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const onRowSelected = selectedRowKeys => {
     setSelectedRowKeys(selectedRowKeys);
-    console.log(selectedRowKeys);
   }
 
   const columns = [
@@ -46,6 +45,7 @@ const OrderTable = () => {
   return (
     <div>
       <Table
+      className="text-2xl"
         rowSelection={rowSelection}
         onRow={(record) => {
           return {
