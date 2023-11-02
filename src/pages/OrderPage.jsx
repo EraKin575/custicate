@@ -1,12 +1,13 @@
-import  { useState } from 'react';
+import { useState } from 'react';
 import { Button, Input, Modal, Form, Select } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import OrderTable from '../components/OrderTable';
 import data from '../assets/DummyData.json';
 
+const { Search } = Input;
+
 const OrderPage = () => {
   const [isModalOpen, setModalOpen] = useState(false);
-  const [randomId, setRandomId] = useState("");
   const [modalFormData, setModalFormData] = useState({
     id: '',
     customer_name: "",
@@ -14,68 +15,70 @@ const OrderPage = () => {
     quantity: "",
     product: ""
   });
-  const [isValidEmail, setValidEmail] = useState(false);
+  const [isValidEmail, setValidEmail] = useState(true);
+  const [searchText, setSearchText] = useState('');
+  const [filteredData, setFilteredData] = useState(data);
 
-  const generateRandomHexadecimalId = () => {
-    const hexChars = '0123456789abcdef';
-    return hexChars[Math.floor(Math.random() * 16)];
-  }
+  const handleSearchTextChange = (e) => {
+    setSearchText(e.target.value);
+    const filtered = data.filter(item => 
+      item.customer_name.toLowerCase().includes(e.target.value.toLowerCase())
+    );
+    setFilteredData(filtered);
+  };
 
   const handleOk = () => {
+    const newData = [...data, { ...modalFormData, id: `_${Math.random().toString(36).substr(2, 9)}` }];
+    setFilteredData(newData);
     setModalOpen(false);
-    setRandomId(generateRandomHexadecimalId());
-    data.push({
-      id: randomId,
-      customer_name: modalFormData.customer_name,
-      customer_email: modalFormData.customer_email,
-      quantity: modalFormData.quantity,
-      product: modalFormData.product
-    });
-  }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setModalFormData(prevState => ({
-      ...prevState,
+    setModalFormData({
+      ...modalFormData,
       [name]: value
-    }));
+    });
   };
 
-  const handleEmailValidation = (e) => {
+  const handleEmailChange = (e) => {
     const { name, value } = e.target;
-    const emailRegex = /\S+@\S+\.\S+/;
-
-    if (emailRegex.test(value)) {
-        setValidEmail(true);
-    }
-    setModalFormData(prevState => ({
-        ...prevState,
-        [name]: value
-        }));
-  }
-
+    setValidEmail(/\S+@\S+\.\S+/.test(value));
+    setModalFormData({
+      ...modalFormData,
+      [name]: value
+    });
+  };
 
   return (
-    <div className="flex flex-col">
-      <div className="mb-5 flex justify-end">
+    <div className="mx-3 flex flex-col p-4 space-y-4">
+      <div className="flex mb-4">
+        <Search
+          className=" rounded-lg"
+          placeholder="Search by customer name"
+          allowClear
+          size="middle"
+          value={searchText}
+          onChange={handleSearchTextChange}
+          enterButton="Search"
+        />
         <Button
-          className="bg-blue-400 font-semibold text-white shadow-md"
-          size="large"
-          onClick={() => {
-            setModalOpen(true);
-          }}
+          type="primary"
+          onClick={() => setModalOpen(true)}
+          className="ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
           Create New Order
         </Button>
       </div>
+
       <Modal
         title="Add New Order"
-        open={isModalOpen}
+        visible={isModalOpen}
         onOk={handleOk}
         onCancel={() => setModalOpen(false)}
       >
         <Form layout="vertical">
-          <Form.Item label="Customer Name">
+          <Form.Item label="Customer Name" name="customer_name" rules={[{ required: true }]}>
             <Input
               onChange={handleChange}
               value={modalFormData.customer_name}
@@ -83,49 +86,43 @@ const OrderPage = () => {
               placeholder="Enter Customer Name"
             />
           </Form.Item>
-          <Form.Item label="Customer Email">
+          <Form.Item label="Customer Email" name="customer_email" rules={[{ required: true, type: 'email' }]}>
             <Input
-              onChange={handleEmailValidation}
+              onChange={handleEmailChange}
               value={modalFormData.customer_email}
               name="customer_email"
               placeholder="Enter Customer Email"
-              type="email"
-              className={isValidEmail ? "" : "border-red-500"}
+              className={`w-full ${isValidEmail ? '' : 'border-red-500'}`}
             />
           </Form.Item>
-          <Form.Item label="Quantity">
+          <Form.Item label="Quantity" name="quantity" rules={[{ required: true }]}>
             <Input
               onChange={handleChange}
               value={modalFormData.quantity}
               name="quantity"
               placeholder="Enter Quantity"
               type="number"
+              min="1"
             />
           </Form.Item>
-          <Form.Item label="Product">
+          <Form.Item label="Product" name="product" rules={[{ required: true }]}>
             <Select
-                onChange={(value) => {
-                    setModalFormData(prevState => ({
-                    ...prevState,
-                    product: value
-                    }));
-                }}
-                value={modalFormData.product}
-                name="product"
-                placeholder="Select Product"
-                suffixIcon={<DownOutlined />}
+              onChange={(value) => setModalFormData({ ...modalFormData, product: value })}
+              value={modalFormData.product}
+              name="product"
+              placeholder="Select Product"
+              suffixIcon={<DownOutlined />}
             >
-                <Select.Option value="Product 1">Product 1</Select.Option>
-                <Select.Option value="Product 2">Product 2</Select.Option>
-                <Select.Option value="Product 3">Product 3</Select.Option>
-
+              {/* Assuming these are the product options you have */}
+              <Select.Option value="Product 1">Product 1</Select.Option>
+              <Select.Option value="Product 2">Product 2</Select.Option>
+              <Select.Option value="Product 3">Product 3</Select.Option>
             </Select>
-           
           </Form.Item>
         </Form>
       </Modal>
 
-      <OrderTable data={data} />
+      <OrderTable data={filteredData} />
     </div>
   );
 };
